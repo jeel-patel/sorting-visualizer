@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sorting Visualizer</title>
+
+    <style>
+      * {
+        margin: 0 0;
+      }
+
+      html {
+        overflow-x: hidden;
+      }
+
+      :root {
+        --nav-bar-color: tomato;
+      }
+
+      nav {
+        display: flex;
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+
+        background-color: tomato;
+        color: white;
+
+        height: 100%;
+        z-index: 1;
+      }
+      .nav-header {
+        /* margin-left: 5px; */
+        /* margin-right: 5px; */
+        width: 100%;
+        padding-bottom: 1vh;
+        text-align: center;
+        user-select: none;
+        text-transform: uppercase;
+      }
+
+      .nav-header:hover {
+        background-color: rgb(248, 37, 0);
+        cursor: pointer;
+      }
+      .nav-header:active {
+        background-color: rgb(206, 33, 3);
+      }
+
+      #number-of-elements,
+      #animation-rate {
+        display: flex;
+        width: 100%;
+
+        justify-content: center;
+        position: relative;
+        top: 5px;
+      }
+      input {
+        margin-left: 5px;
+      }
+
+      #control-buttons {
+        display: flex;
+        width: 100vw;
+
+        background-color: tomato;
+
+        position: absolute;
+        bottom: 0vh;
+
+        justify-content: center;
+      }
+
+      button {
+        background-color: #44b348; /* Green */
+        border: none;
+        color: white;
+        padding: 1px 5px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        margin: 4px 2px;
+        transition-duration: 0.4s;
+        cursor: pointer;
+      }
+      button {
+        background-color: white;
+        color: black;
+        border: 2px solid #ffffff;
+      }
+
+      button:hover {
+        background-color: #f44336;
+        color: white;
+      }
+
+      #sorting-divs {
+        display: flex;
+
+        /* align-items: baseline; */
+        align-items: end;
+
+        width: 100vw;
+        text-align: center;
+
+        border-bottom: 5px solid black;
+
+        height: 60vh;
+
+        position: relative;
+        top: 20vh;
+      }
+      .bars {
+        position: relative;
+
+        transition: bottom 0.5s ease-in-out;
+        bottom: 0vh;
+      }
+
+      #current-indexes {
+        position: inherit;
+      }
+    </style>
+  </head>
+  <body onload="initialize(); changeTheContent()">
+    <nav>
+      <div class="nav-header" id="bubble_sort">Bubble sot</div>
+      <div class="nav-header" id="insertion_sort">Insertion sort</div>
+      <div class="nav-header" id="quick_sort">Quick sort</div>
+      <div class="nav-header" id="merge_sort">Merge sort</div>
+    </nav>
+
+    <div id="rate-info">
+      <div id="number-of-elements">
+        <!-- <div>Enter the number of elements to be sorted (10-100):- </div> -->
+        <div>Array size</div>
+        <input type="range" id="elements" name="vol" min="10" max="1000" />
+        <div id="ele-num" style="padding-left: 5px">50</div>
+      </div>
+      <div id="animation-rate">
+        <div>Speed</div>
+        <input type="range" id="speed" min="0.25" max="5" step="1" />
+        <div id="speed-info">3</div>
+      </div>
+      <div id="current-indexes"></div>
+    </div>
+
+    <content id="sorting-divs"> </content>
+
+    <footer id="control-buttons">
+      <button id="start">Start</button>
+      <button id="stop">Stop</button>
+      <button id="new_array">New Array</button>
+    </footer>
+  </body>
+
+  <script>
+    var started, paused, stopped;
+    var bubble_sort_active = false,
+      insertion_sort_active = false,
+      quick_sort_active = false,
+      merge_sort_active = false;
+    const speedoMeter = 350;
+
+    function initialize() {
+      document.getElementById("elements").value = 30;
+    }
+
+    document
+      .getElementById("elements")
+      .addEventListener("input", changeTheContent);
+    document.getElementById("speed").addEventListener("input", function () {
+      document.getElementById("speed-info").innerHTML = this.value;
+    });
+
+    function changeTheContent() {
+      let a = (document.getElementsByTagName("number").innerHTML =
+        document.getElementById("elements").value);
+      // console.log(a);
+      document.getElementById("ele-num").innerHTML = a;
+
+      let elementsToAddOrDelete = document.getElementById("elements").value; // - document.getElementById('sorting-divs').getElementsByTagName('div').length;
+
+      if (elementsToAddOrDelete < 0) {
+        for (let i = -1 * elementsToAddOrDelete; i > 0; i--)
+          document
+            .getElementById("sorting-divs")
+            .removeChild(document.getElementById("sorting-divs").lastChild);
+      } else {
+        document.getElementById("sorting-divs").innerHTML = "";
+        for (let i = elementsToAddOrDelete; i > 0; i--) {
+          let temp = document.createElement("div");
+
+          temp.style.height = Math.random() * 60 + "vh";
+          temp.style.width = 10 + "vw";
+          temp.style.border = "0.2px solid red";
+          temp.style.transition = "background-color 0.3s ease-in-out";
+          temp.className = "bars";
+          // temp.innerText = (parseFloat(temp.style.height)/1000*document.documentElement.clientHeight * 0.65).toFixed(0);
+
+          // console.log(temp);
+          document.getElementById("sorting-divs").appendChild(temp);
+        }
+      }
+    }
+
+    document.getElementById("stop").addEventListener("click", function () {
+      stopped = true;
+    });
+
+    document.getElementById("new_array").addEventListener("click", function () {
+      changeTheContent();
+    });
+
+    document
+      .getElementById("start")
+      .addEventListener("click", async function () {
+        if (
+          !(
+            bubble_sort_active ||
+            insertion_sort_active ||
+            quick_sort_active ||
+            merge_sort_active
+          )
+        ) {
+          alert("No algorithm selected");
+          return;
+        }
+
+        stopped = false;
+        document.getElementById("elements").disabled = true;
+        document.getElementById("start").disabled = true;
+        document.getElementById("new_array").disabled = true;
+        document.getElementsByClassName("nav-header")[0].style.pointerEvents =
+          "none";
+        document.getElementsByClassName("nav-header")[1].style.pointerEvents =
+          "none";
+        document.getElementsByClassName("nav-header")[2].style.pointerEvents =
+          "none";
+        document.getElementsByClassName("nav-header")[3].style.pointerEvents =
+          "none";
+
+        started = true;
+
+        // console.log(quick_sort_active);
+        if (bubble_sort_active) {
+          await performBubbleSort();
+        } else if (insertion_sort_active) {
+          await performInsertionSort();
+        } else if (quick_sort_active) {
+          await performQuickSort(
+            0,
+            parseInt(document.getElementById("ele-num").innerText - 1)
+          );
+          // console.log('completed');
+        } else {
+          await performMergeSort();
+        }
+
+        stopped = true;
+        started = false;
+        resetAll();
+      });
+
+    async function performInsertionSort() {
+      let temp = document
+        .getElementById("sorting-divs")
+        .getElementsByTagName("div");
+      let n = temp.length;
+
+      temp[0].style.backgroundColor = "yellow";
+      for (let i = 1; i < n; ++i) {
+        let key = temp[i].style.height;
+        let j = i - 1;
+
+        if (stopped) {
+          return;
+        }
+        temp[i].style.backgroundColor = "green";
+        await sleep(
+          speedoMeter / document.getElementById("speed-info").innerText
+        );
+
+        while (j >= 0) {
+          if (parseFloat(temp[j].style.height) < parseFloat(key)) {
+            temp[j].style.backgroundColor = "yellow";
+            break;
+          }
+          let x = temp[j].style.height;
+          temp[j].style.height = key;
+          temp[j].style.backgroundColor = "white";
+          await sleep(
+            speedoMeter / document.getElementById("speed-info").innerText
+          );
+          temp[j].style.height = x;
+          temp[j].style.backgroundColor = "yellow";
+          temp[j + 1].style.height = temp[j].style.height;
+          await sleep(
+            speedoMeter / document.getElementById("speed-info").innerText
+          );
+          if (stopped) {
+            return;
+          }
+          j = j - 1;
+        }
+        temp[j + 1].style.height = key;
+        if (stopped) {
+          return;
+        }
+        await sleep(
+          speedoMeter / document.getElementById("speed-info").innerText
+        );
+        temp[j + 1].style.backgroundColor = "yellow";
+
+        if (i == n - 1) {
+          temp[i].style.backgroundColor = "yellow";
+        }
+        temp[i].innerText = "";
+      }
+    }
+
+    async function performBubbleSort() {
+      let temp = document
+        .getElementById("sorting-divs")
+        .getElementsByTagName("div");
+      let elements = temp.length;
+
+      for (let i = 0; i < elements - 1; i++) {
+        for (let j = 0; j < elements - i - 1; j++) {
+          if (stopped) {
+            return;
+          }
+          let a = temp[j].style.height;
+          let b = temp[j + 1].style.height;
+
+          temp[j].style.backgroundColor = "yellow";
+          temp[j + 1].style.backgroundColor = "yellow";
+          await sleep(
+            speedoMeter / document.getElementById("speed-info").innerText
+          );
+
+          if (parseFloat(a) > parseFloat(b)) {
+            temp[j].style.backgroundColor = "green";
+
+            let t = a;
+            temp[j].style.height = b;
+            temp[j + 1].style.height = t;
+
+            // console.log(temp[j].getBoundingClientRect().left+ ' ' + temp[j].getBoundingClientRect().left);
+
+            await sleep(
+              speedoMeter / document.getElementById("speed-info").innerText
+            );
+          }
+          temp[j].style.backgroundColor = "white";
+          temp[j + 1].style.backgroundColor = "white";
+          if (stopped) {
+            return;
+          }
+        }
+      }
+    }
+
+    async function performQuickSort(start, end) {
+      // console.log(start, end);
+      if (end < 0 || start < 0) {
+        return;
+      }
+      if (stopped) {
+        return;
+      }
+      let temp = document
+        .getElementById("sorting-divs")
+        .getElementsByTagName("div");
+
+      try {
+        if (start < end) {
+          temp[start].style.backgroundColor = "green";
+          temp[end].style.backgroundColor = "green";
+          if (stopped) {
+            return;
+          }
+          await sleep(
+            speedoMeter / document.getElementById("speed-info").innerText
+          );
+
+          let pivot = await partition(start, end);
+          // temp[pivot].style.backgroundColor = 'yellow';
+
+          if (stopped) {
+            return;
+          }
+          await sleep(
+            speedoMeter / document.getElementById("speed-info").innerText
+          );
+
+          temp[start].style.backgroundColor = "white";
+          temp[end].style.backgroundColor = "white";
+
+          // document.getElementById('current-indexes').innerText = start + ' ' + pivot + ' ' + end;
+
+          if (stopped) {
+            return;
+          }
+          await performQuickSort(start, pivot - 1);
+          if (stopped) {
+            return;
+          }
+          await performQuickSort(pivot + 1, end);
+        }
+      } catch (err) {}
+    }
+
+    async function partition(start, end) {
+      let temp = document
+        .getElementById("sorting-divs")
+        .getElementsByTagName("div");
+
+      temp[start].style.marginLeft = "1.5vw";
+      temp[end].style.marginRight = "1.5vw";
+      for (let r = start; r <= end; r++) {
+        temp[r].style.bottom = "4vh";
+        await sleep(20);
+      }
+
+      let pivot = end;
+
+      let i = start - 1;
+      let j = start;
+
+      if (stopped) {
+        return;
+      }
+      for (; j <= end; j++) {
+        if (stopped) {
+          return;
+        }
+        temp[j].style.backgroundColor = "black";
+        await sleep(
+          (speedoMeter / 1.2) * document.getElementById("speed-info").innerText
+        );
+        if (
+          parseFloat(temp[j].style.height) <=
+          parseFloat(temp[pivot].style.height)
+        ) {
+          i++;
+          let t = temp[i].style.height;
+
+          temp[j].style.backgroundColor = "red";
+          await sleep(
+            (speedoMeter / 1.2) *
+              document.getElementById("speed-info").innerText
+          );
+          temp[j].style.backgroundColor = "black";
+
+          temp[i].style.height = temp[j].style.height;
+          temp[j].style.height = t;
+
+          temp[i].style.backgroundColor = "red";
+          await sleep(
+            speedoMeter / document.getElementById("speed-info").innerText
+          );
+          temp[i].style.backgroundColor = "white";
+
+          temp[i].style.backgroundColor = "purple";
+        }
+        await sleep(
+          (speedoMeter / 1.2) * document.getElementById("speed-info").innerText
+        );
+        temp[j].style.backgroundColor = "white";
+        if (j == i) {
+          temp[i].style.backgroundColor = "purple";
+        }
+      }
+      await sleep(
+        speedoMeter / document.getElementById("speed-info").innerText
+      );
+
+      for (let k = start; k < j; k++) {
+        temp[k].style.backgroundColor = "white";
+      }
+
+      temp[i].style.backgroundColor = "yellow";
+
+      for (let r = end; r >= start; r--) {
+        temp[r].style.bottom = "0vh";
+        await sleep(10);
+      }
+      temp[start].style.marginLeft = "0vw";
+      temp[end].style.marginRight = "0vw";
+
+      return i;
+    }
+
+    async function performMergeSort() {
+      await merge_sort(
+        0,
+        document.getElementById("sorting-divs").getElementsByTagName("div")
+          .length - 1
+      );
+      console.log("completed");
+    }
+
+    async function merge_sort(s, e) {
+      if (s < e) {
+        // console.log(s,e);
+        await merge_sort(s, Math.floor(s + (e - s) / 2));
+        await merge_sort(Math.floor(s + (e - s) / 2) + 1, e);
+        await merge_array(
+          s,
+          s + Math.floor((e - s) / 2),
+          s + Math.floor((e - s) / 2) + 1,
+          e
+        );
+      }
+    }
+
+    async function merge_array(s1, e1, s2, e2) {
+      // let new_temp_array[(e1-s1)+1+(e2-s2)+1];
+      // console.log('merge array',s1,e1,s2,e2);
+
+      try {
+        let new_temp_array = [];
+        let temp = document
+          .getElementById("sorting-divs")
+          .getElementsByTagName("div");
+
+        
+        for(let k=s1; k<=e2; k++){
+          new_temp_array[k] = temp[k].style.height;
+        }
+
+        temp[e1].style.marginRight = "10px";
+        temp[s1].style.marginLeft = "5px";
+        temp[e2].style.marginRight = "5px";
+
+        await sleep(
+          speedoMeter / document.getElementById("speed-info").innerText
+        );
+
+        temp[s1].style.backgroundColor = "green";
+        temp[e1].style.backgroundColor = "green";
+        temp[s2].style.backgroundColor = "blue";
+        temp[e2].style.backgroundColor = "blue";
+
+        await sleep(
+          speedoMeter / document.getElementById("speed-info").innerText
+        );
+
+        let first_ptr = s1,
+          second_ptr = s2;
+
+        for (let i = 0; i < e1 - s1 + 1 + (e2 - s2) + 1; i++) {
+          if (first_ptr <= e1 && second_ptr <= e2) {
+            // console.log(temp[first_ptr].style.height);
+            temp[first_ptr].style.backgroundColor = "black";
+            temp[second_ptr].style.backgroundColor = "black";
+            // temp[first_ptr].style.bottom = '2vh';
+            // temp[second_ptr].style.bottom = '2vh';
+            await sleep(
+              speedoMeter / document.getElementById("speed-info").innerText
+            );
+
+            if (
+              parseFloat(new_temp_array[first_ptr]) <
+              parseFloat(new_temp_array[second_ptr])
+            ) {
+
+              temp[i+s1].style.height = new_temp_array[first_ptr];
+              temp[i+s1].style.backgroundColor = "purple";
+              await sleep(
+                (speedoMeter / 2) *
+                  document.getElementById("speed-info").innerText
+              );
+
+              first_ptr++;
+            } else {
+
+              temp[i+s1].style.height = new_temp_array[second_ptr];
+              temp[i+s1].style.backgroundColor = "purple";
+              await sleep(
+                (speedoMeter / 2) *
+                  document.getElementById("speed-info").innerText
+              );
+
+              second_ptr++;
+            }
+          } else {
+            if (first_ptr > e1) {
+              for (let j = second_ptr; j <= e2; j++) {
+
+                temp[j].style.backgroundColor = 'purple';
+                await sleep(speedoMeter/document.getElementById("speed-info").innerText);
+                i++;
+              }
+              break;
+            } else {
+              for (let j = first_ptr; j <= e1; j++) {
+                temp[i+s1].style.height = new_temp_array[j];
+                temp[i+s1].style.background = 'purple';
+
+                await sleep(speedoMeter/document.getElementById("speed-info").innerText);
+                i++;
+              }
+              break;
+            }
+          }
+          // temp[first_ptr].style.bottom = "0vh";
+          // temp[second_ptr].style.bottom = "0vh";
+          if(first_ptr<=e1)
+            temp[first_ptr].style.backgroundColor = "white";
+          if(second_ptr<=e2)
+            temp[second_ptr].style.backgroundColor = "white";
+        }
+
+        // for (let i = s1; i <= e2; i++) {
+        //   temp[i].style.height = new_temp_array[i - s1];
+          
+        //   await sleep( (speedoMeter/1.5)*document.getElementById("speed-info").innerText);
+          
+        //   temp[i].style.backgroundColor = 'purple';
+        // }
+
+        for(let i=s1; i<=e2; i++) {
+
+          // await sleep( (speedoMeter/3)*document.getElementById("speed-info").innerText)
+          temp[i].style.backgroundColor = 'white';
+
+        }
+
+        temp[e1].style.marginRight = "0px";
+        temp[s1].style.marginLeft = "0px";
+        temp[e2].style.marginRight = "0px";
+        console.log(temp);
+      } catch (err) {
+        console.log(err);
+      }
+    }
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    function resetAll() {
+      document.getElementById("elements").disabled = false;
+      document.getElementById("start").disabled = false;
+      document.getElementById("stop").disabled = false;
+      document.getElementById("new_array").disabled = false;
+      document.getElementsByClassName("nav-header")[0].style.pointerEvents =
+        "all";
+      document.getElementsByClassName("nav-header")[1].style.pointerEvents =
+        "all";
+      document.getElementsByClassName("nav-header")[2].style.pointerEvents =
+        "all";
+      document.getElementsByClassName("nav-header")[3].style.pointerEvents =
+        "all";
+    }
+
+    document
+      .getElementById("bubble_sort")
+      .addEventListener("click", function () {
+        document.getElementById("bubble_sort").style.backgroundColor = "red";
+        merge_sort_active =
+          quick_sort_active =
+          insertion_sort_active =
+            !(bubble_sort_active = true);
+
+        document.getElementById("insertion_sort").style.backgroundColor =
+          "tomato";
+        document.getElementById("quick_sort").style.backgroundColor = "tomato";
+        document.getElementById("merge_sort").style.backgroundColor = "tomato";
+      });
+    document
+      .getElementById("insertion_sort")
+      .addEventListener("click", function () {
+        document.getElementById("insertion_sort").style.backgroundColor = "red";
+        merge_sort_active =
+          quick_sort_active =
+          bubble_sort_active =
+            !(insertion_sort_active = true);
+
+        document.getElementById("bubble_sort").style.backgroundColor = "tomato";
+        document.getElementById("quick_sort").style.backgroundColor = "tomato";
+        document.getElementById("merge_sort").style.backgroundColor = "tomato";
+      });
+    document
+      .getElementById("quick_sort")
+      .addEventListener("click", function () {
+        document.getElementById("quick_sort").style.backgroundColor = "red";
+        merge_sort_active =
+          bubble_sort_active =
+          insertion_sort_active =
+            !(quick_sort_active = true);
+
+        document.getElementById("bubble_sort").style.backgroundColor = "tomato";
+        document.getElementById("insertion_sort").style.backgroundColor =
+          "tomato";
+        document.getElementById("merge_sort").style.backgroundColor = "tomato";
+      });
+    document
+      .getElementById("merge_sort")
+      .addEventListener("click", function () {
+        document.getElementById("merge_sort").style.backgroundColor = "red";
+        bubble_sort_active =
+          insertion_sort_active =
+          quick_sort_active =
+            !(merge_sort_active = true);
+
+        document.getElementById("insertion_sort").style.backgroundColor =
+          "tomato";
+        document.getElementById("quick_sort").style.backgroundColor = "tomato";
+        document.getElementById("bubble_sort").style.backgroundColor = "tomato";
+      });
+  </script>
+</html>
